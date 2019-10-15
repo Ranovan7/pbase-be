@@ -77,7 +77,7 @@ $app = new \Slim\App($settings);
  */
 $app->add(new Tuupola\Middleware\JwtAuthentication([
     "path" => ["/api"],
-    "ignore" => ["/api/token"],
+    "ignore" => ["/api/token", "/api/tokentest"],
     "attribute" => "decoded_token_data",
     "secret" => env('SECRET'),
     "algorithm" => ["HS256"],

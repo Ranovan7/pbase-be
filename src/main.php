@@ -14,10 +14,8 @@ $app->group('/api', function() {
 
         $data = [
             "status" => "200",
-            "message" => "main api",
-            "data" => [
-                "key" => "VALUE"
-            ]
+            "message" => "welcome to main api",
+            "data" => $decoded
         ];
 
         return $response
@@ -25,9 +23,25 @@ $app->group('/api', function() {
             ->getBody()->write(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
     });
 
-    // change into get for testing purposes
-    $this->get('/token', function(Request $request, Response $response, $args) {
-    // $this->post('/token', function(Request $request, Response $response, $args) {
+    // token generation testing
+    $this->get('/tokentest', function(Request $request, Response $response, $args) {
+        $params = $request->getParams();
+        $settings = $this->get('settings');
+        $secret = $settings['jwt']['secret'];
+        $token = JWT::encode($params, $secret, "HS256");
+
+        $data = [
+            "status" => "200",
+            "message" => "authentication success",
+            "data" => [
+                "token" => $token
+            ]
+        ];
+
+        return $response->withJson($data, 200, JSON_PRETTY_PRINT);
+    });
+
+    $this->post('/token', function(Request $request, Response $response, $args) {
         $params = $request->getParams();
         // verify params data
 
