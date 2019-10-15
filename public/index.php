@@ -2,6 +2,7 @@
 
 use Slim\Http\Request;
 use Slim\Http\Response;
+use Tuupola\Middleware\JwtAuthentication;
 
 if (PHP_SAPI == 'cli-server') {
     // To help the built-in PHP dev server, check if the request was actually for
@@ -62,6 +63,9 @@ $settings = [
 			'username' => env('DB_USERNAME'),
 			'password' => env('DB_PASSWORD'),
         ],
+        'jwt' => [
+            'secret' => env('SECRET')
+        ]
     ],
 ];
 
@@ -71,6 +75,21 @@ $app = new \Slim\App($settings);
 /**
  * # SETTINGS BLOCK
  */
+$app->add(new Tuupola\Middleware\JwtAuthentication([
+    "path" => ["/api"],
+    "ignore" => ["/api/token"],
+    "attribute" => "decoded_token_data",
+    "secret" => env('SECRET'),
+    "algorithm" => ["HS256"],
+    "relaxed" => ["localhost"],
+    "error" => function ($response, $arguments) {
+        $data["status"] = "error";
+        $data["message"] = $arguments["message"];
+        return $response
+            ->withHeader("Content-Type", "application/json")
+            ->getBody()->write(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+    }
+]));
 
 
 
@@ -81,28 +100,16 @@ $app = new \Slim\App($settings);
 // Set up dependencies
 $container = $app->getContainer();
 
-// view renderer
-// $container['view'] = function ($c) {
-//     $settings = $c->get('settings')['renderer'];
-// 	$view = new \Slim\Views\Twig($settings['template_path'], [
-//         // 'cache' => $settings['cache_path']
-//     ]);
-//
-//     // Instantiate and add Slim specific extension
-//     $router = $c->get('router');
-//     $uri = \Slim\Http\Uri::createFromEnvironment(new \Slim\Http\Environment($_SERVER));
-//     $view->addExtension(new \Slim\Views\TwigExtension($router, $uri));
-//     $view->addExtension(new \Knlv\Slim\Views\TwigMessages(new Slim\Flash\Messages()));
-//
-//     return $view;
-// };
-
 // not found handler
-// $container['notFoundHandler'] = function($c) {
-//     return function (Request $request, Response $response) use ($c) {
-//         return $c->view->render($response->withStatus(404), 'errors/404.html');
-//     };
-// };
+$container['notFoundHandler'] = function($c) {
+    return function (Request $request, Response $response) use ($c) {
+        return $response->withJson([
+            "status" => "404",
+            "message" => "endpoint not found",
+            "data" => []
+        ], 404, JSON_PRETTY_PRINT);
+    };
+};
 
 // error handler
 // if (!$container->get('settings')['debugMode'])

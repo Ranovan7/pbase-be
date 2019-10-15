@@ -2,19 +2,49 @@
 
 use Slim\Http\Request;
 use Slim\Http\Response;
+use \Firebase\JWT\JWT;
 
 // Main Route
 
 $app->group('/api', function() {
     // home
     $this->get('[/]', function(Request $request, Response $response, $args) {
-        return $response->withJson([
+        $decoded = $request->getAttribute('decoded_token_data');
+        // dump($decoded);
+
+        $data = [
             "status" => "200",
-            "description" => "main api",
+            "message" => "main api",
             "data" => [
                 "key" => "VALUE"
             ]
-        ], 200);
+        ];
+
+        return $response
+            ->withHeader("Content-Type", "application/json")
+            ->getBody()->write(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+    });
+
+    // change into get for testing purposes
+    $this->get('/token', function(Request $request, Response $response, $args) {
+    // $this->post('/token', function(Request $request, Response $response, $args) {
+        $params = $request->getParams();
+        // verify params data
+
+        // generate token
+        $settings = $this->get('settings');
+        $secret = $settings['jwt']['secret'];
+        $token = JWT::encode($params, $secret, "HS256");
+
+        $data = [
+            "status" => "200",
+            "message" => "authentication success",
+            "data" => [
+                "token" => $token
+            ]
+        ];
+
+        return $response->withJson($data, 200, JSON_PRETTY_PRINT);
     });
 
     // Auth User
@@ -52,7 +82,7 @@ $app->group('/api', function() {
         // $this->flash->addMessage('messages', 'Berhasil Login');
         return $response->withJson([
             "status" => "200",
-            "description" => "login success",
+            "message" => "login success",
             "data" => [
                 "key" => "VALUE"
             ]
@@ -89,17 +119,11 @@ $app->group('/api', function() {
         }
     });
 
-    $this->get('/logout', function(Request $request, Response $response, $args) {
-        // $this->flash->addMessage('messages', 'Berhasil Logout');
-        $this->session->destroy();
-        return $this->response->withRedirect('/login');
-    });
-
     $this->get('/forbidden', function(Request $request, Response $response, $args) {
 
         return $response->withJson([
             "status" => "403",
-            "description" => "forbidden",
+            "message" => "forbidden",
             "data" => [
                 "key" => "VALUE"
             ]
