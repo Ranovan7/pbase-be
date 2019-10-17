@@ -6,7 +6,7 @@ use \Firebase\JWT\JWT;
 
 // Main Route
 
-$app->group('/api', function() {
+$app->group('/auth', function() {
     // home
     $this->get('[/]', function(Request $request, Response $response, $args) {
         $decoded = $request->getAttribute('decoded_token_data');
@@ -24,37 +24,19 @@ $app->group('/api', function() {
     });
 
     // token generation testing
-    $this->get('/tokentest', function(Request $request, Response $response, $args) {
-        $params = $request->getParams();
+    $this->get('/token', function(Request $request, Response $response, $args) {
+        $headers = $request->getHeaders();
         $settings = $this->get('settings');
         $secret = $settings['jwt']['secret'];
-        $token = JWT::encode($params, $secret, "HS256");
+        // $token = JWT::encode($params, $secret, "HS256");
 
         $data = [
             "status" => "200",
             "message" => "authentication success",
             "data" => [
-                "token" => $token
-            ]
-        ];
-
-        return $response->withJson($data, 200, JSON_PRETTY_PRINT);
-    });
-
-    $this->post('/token', function(Request $request, Response $response, $args) {
-        $params = $request->getParams();
-        // verify params data
-
-        // generate token
-        $settings = $this->get('settings');
-        $secret = $settings['jwt']['secret'];
-        $token = JWT::encode($params, $secret, "HS256");
-
-        $data = [
-            "status" => "200",
-            "message" => "authentication success",
-            "data" => [
-                "token" => $token
+                "user" => $headers["PHP_AUTH_USER"],
+                "password" => $headers["PHP_AUTH_PW"],
+                "users" => $users
             ]
         ];
 
@@ -62,8 +44,6 @@ $app->group('/api', function() {
     });
 
     // Auth User
-    // dummy login flow, bisa di uncomment ke POST
-    // $app->get('/lg', function(Request $request, Response $response, $args) {
     $this->post('/login', function(Request $request, Response $response, $args) {
         $credentials = $request->getParams();
         if (empty($credentials['username']) || empty($credentials['password'])) {
@@ -103,41 +83,44 @@ $app->group('/api', function() {
         ], 200);
     });
 
-    // generate admin, warning!
-    $this->get('/gen', function(Request $request, Response $response, $args) {
-        $credentials = $request->getParams();
-        if (empty($credentials['username']) || empty($credentials['password']) || empty($credentials['role'])) {
-            die("Masukkan username, password dan role");
-        }
-
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE username=:username");
-        $stmt->execute([':username' => $credentials['username']]);
-        $user = $stmt->fetch();
-
-        // jika belum ada di DB, tambahkan
-        if (!$user) {
-            $stmt = $this->db->prepare("INSERT INTO users (username, password, role) VALUES (:username, :password, :role)");
-            $stmt->execute([
-                ':username' => $credentials['username'],
-                ':password' => password_hash($credentials['password'], PASSWORD_DEFAULT),
-                ':role' => $credentials['role'],
-            ]);
-            die("Username {$credentials['username']} ditambahkan!");
-        } else { // else update password
-            $stmt = $this->db->prepare("UPDATE users SET password=:password WHERE id=:id");
-            $stmt->execute([
-                ':password' => password_hash($credentials['password'], PASSWORD_DEFAULT),
-                ':id' => $user['id']
-            ]);
-            die("Password {$user['username']} diubah!");
-        }
-    });
-
-    $this->get('/forbidden', function(Request $request, Response $response, $args) {
+    $this->get('/logout', function(Request $request, Response $response, $args) {
 
         return $response->withJson([
-            "status" => "403",
-            "message" => "forbidden",
+            "status" => "200",
+            "message" => "this is logout endpoint",
+            "data" => [
+                "key" => "VALUE"
+            ]
+        ], 200);
+    });
+
+    $this->get('/refresh', function(Request $request, Response $response, $args) {
+
+        return $response->withJson([
+            "status" => "200",
+            "message" => "this is refresh endpoint",
+            "data" => [
+                "key" => "VALUE"
+            ]
+        ], 200);
+    });
+
+    $this->get('/update', function(Request $request, Response $response, $args) {
+
+        return $response->withJson([
+            "status" => "200",
+            "message" => "this is update endpoint",
+            "data" => [
+                "key" => "VALUE"
+            ]
+        ], 200);
+    });
+
+    $this->get('/user', function(Request $request, Response $response, $args) {
+
+        return $response->withJson([
+            "status" => "200",
+            "message" => "this is user endpoint",
             "data" => [
                 "key" => "VALUE"
             ]

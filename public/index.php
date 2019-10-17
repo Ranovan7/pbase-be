@@ -3,6 +3,9 @@
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Tuupola\Middleware\JwtAuthentication;
+use Tuupola\Middleware\HttpBasicAuthentication;
+use Tuupola\Middleware\HttpBasicAuthentication\PdoAuthenticator;
+use Tuupola\Middleware\HttpBasicAuthentication\AuthenticatorInterface;
 
 if (PHP_SAPI == 'cli-server') {
     // To help the built-in PHP dev server, check if the request was actually for
@@ -17,8 +20,6 @@ if (PHP_SAPI == 'cli-server') {
 require __DIR__ . '/../vendor/autoload.php';
 
 session_start();
-
-
 
 /**
  * SETTINGS BLOCK
@@ -75,21 +76,6 @@ $app = new \Slim\App($settings);
 /**
  * # SETTINGS BLOCK
  */
-$app->add(new Tuupola\Middleware\JwtAuthentication([
-    "path" => ["/api"],
-    "ignore" => ["/api/token", "/api/tokentest"],
-    "attribute" => "decoded_token_data",
-    "secret" => env('SECRET'),
-    "algorithm" => ["HS256"],
-    "relaxed" => ["localhost"],
-    "error" => function ($response, $arguments) {
-        $data["status"] = "error";
-        $data["message"] = $arguments["message"];
-        return $response
-            ->withHeader("Content-Type", "application/json")
-            ->getBody()->write(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
-    }
-]));
 
 
 
@@ -186,6 +172,42 @@ $container['user'] = function($c) {
 /**
  * # DEPENDENCIES BLOCK
  */
+
+ $app->add(new Tuupola\Middleware\HttpBasicAuthentication([
+     "path" => ["/api/auth/login", "/api/auth/token"],
+     "realm" => "Protected",
+     "authenticator" => new PdoAuthenticator([
+		"pdo" => $container['db'],
+        "user" => "username",
+		"hash" => "password"
+	]),
+     "error" => function ($response, $arguments) {
+         $data = [];
+         $data["status"] = "error";
+         $data["message"] = $arguments["message"];
+
+         $body = $response->getBody();
+         $body->write(json_encode($data, JSON_UNESCAPED_SLASHES));
+
+         return $response->withBody($body);
+     }
+ ]));
+
+ $app->add(new Tuupola\Middleware\JwtAuthentication([
+     "path" => ["/api/auth"],
+     "ignore" => ["/api/auth/login", "/api/auth/token"],
+     "attribute" => "decoded_token_data",
+     "secret" => env('SECRET'),
+     "algorithm" => ["HS256"],
+     "relaxed" => ["localhost"],
+     "error" => function ($response, $arguments) {
+         $data["status"] = "error";
+         $data["message"] = $arguments["message"];
+         return $response
+             ->withHeader("Content-Type", "application/json")
+             ->getBody()->write(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
+     }
+ ]));
 
 
 
@@ -326,10 +348,8 @@ $app->get('/test', function(Request $request, Response $response) {
 $app->group('/api', function() {
     $app = $this;
 
-    // require __DIR__ . '/../src/api/main.php';
+    require __DIR__ . '/../src/auth.php';
 });
-
-require __DIR__ . '/../src/main.php';
 
 /**
  * # ROUTES BLOCK
