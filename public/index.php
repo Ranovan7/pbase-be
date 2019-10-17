@@ -174,7 +174,7 @@ $container['user'] = function($c) {
  */
 
  $app->add(new Tuupola\Middleware\HttpBasicAuthentication([
-     "path" => ["/api/auth/login", "/api/auth/token"],
+     "path" => ["/api/auth/login"],
      "realm" => "Protected",
      "authenticator" => new PdoAuthenticator([
 		"pdo" => $container['db'],
@@ -195,7 +195,7 @@ $container['user'] = function($c) {
 
  $app->add(new Tuupola\Middleware\JwtAuthentication([
      "path" => ["/api/auth"],
-     "ignore" => ["/api/auth/login", "/api/auth/token"],
+     "ignore" => ["/api/auth/login"],
      "attribute" => "decoded_token_data",
      "secret" => env('SECRET'),
      "algorithm" => ["HS256"],
