@@ -24,8 +24,8 @@ $app->group('/auth', function() {
     });
 
     // change to post on production env
-    $this->get('/login', function(Request $request, Response $response, $args) {
-    // $this->post('/login', function(Request $request, Response $response, $args) {
+    // $this->get('/login', function(Request $request, Response $response, $args) {
+    $this->post('/login', function(Request $request, Response $response, $args) {
         $headers = $request->getHeaders();
         $data = [
             "username" => $headers["PHP_AUTH_USER"][0]
@@ -45,7 +45,7 @@ $app->group('/auth', function() {
             ]
         ];
 
-        return $response->withJson($data, 200, JSON_PRETTY_PRINT);
+        return $response->withJson($data, 200, JSON_PRETTY_PRINT)->withHeader('Authorization', "Bearer {$token}");
     });
 
     $this->get('/logout', function(Request $request, Response $response, $args) {
