@@ -8,3 +8,4 @@ raw/
 .env
 *.zip
 composer.lock
+/*.bat

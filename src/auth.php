@@ -56,7 +56,7 @@ $app->group('/auth', function() {
             ]
         ];
 
-        return $response->withJson($result, 200, JSON_PRETTY_PRINT);
+        return $response->withJson($result, 200, JSON_PRETTY_PRINT)->withHeader('Authorization', "Bearer {$token}");
     });
 
     $this->get('/logout', function(Request $request, Response $response, $args) {
