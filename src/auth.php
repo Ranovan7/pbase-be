@@ -26,9 +26,20 @@ $app->group('/auth', function() {
     // change to post on production env
     $this->get('/login', function(Request $request, Response $response, $args) {
     // $this->post('/login', function(Request $request, Response $response, $args) {
+        // check credentials
         $headers = $request->getHeaders();
+        $username = $headers["PHP_AUTH_USER"][0];
+        $user = $this->db->query("SELECT * FROM users WHERE username='{$username}'")->fetch();
+        if (!$user || !password_verify($headers["PHP_AUTH_PW"][0], $user['password'])) {
+            return $response->withJson([
+                "status" => "failed",
+                "message" => "authentication failed"
+            ], 200, JSON_PRETTY_PRINT);
+        }
+
         $data = [
-            "username" => $headers["PHP_AUTH_USER"][0]
+            "username" => $headers["PHP_AUTH_USER"][0],
+            "tenant_id" => $user['tenant_id']
         ];
 
         // generate token
@@ -36,7 +47,7 @@ $app->group('/auth', function() {
         $secret = $settings['jwt']['secret'];
         $token = JWT::encode($data, $secret, "HS256");
 
-        $data = [
+        $result = [
             "status" => "200",
             "message" => "authentication success",
             "data" => [
@@ -45,7 +56,7 @@ $app->group('/auth', function() {
             ]
         ];
 
-        return $response->withJson($data, 200, JSON_PRETTY_PRINT);
+        return $response->withJson($result, 200, JSON_PRETTY_PRINT);
     });
 
     $this->get('/logout', function(Request $request, Response $response, $args) {

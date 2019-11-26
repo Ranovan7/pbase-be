@@ -194,7 +194,7 @@ $container['user'] = function($c) {
  ]));
 
  $app->add(new Tuupola\Middleware\JwtAuthentication([
-     "path" => ["/api/auth"],
+     "path" => ["/api/auth", "/api/logger"],
      "ignore" => ["/api/auth/login"],
      "attribute" => "decoded_token_data",
      "secret" => env('SECRET'),
@@ -349,6 +349,7 @@ $app->group('/api', function() {
     $app = $this;
 
     require __DIR__ . '/../src/auth.php';
+    require __DIR__ . '/../src/logger.php';
 });
 
 /**
